@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>ライブ配信中</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        /* (CSSは変更なし) */
+        body { font-family: 'Noto Sans JP', sans-serif; -webkit-user-select: none; user-select: none; background-color: #f3f4f6; }
+        #container { width: 100%; height: 100vh; margin: 0; border-radius: 0; box-shadow: none; background-color: black; }
+        @media (min-width: 640px) {
+            #container { max-width: 420px; height: 90vh; max-height: 840px; margin: auto; border-radius: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 8px solid #1f2937; }
+            body { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .live-badge { background: linear-gradient(to right, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5); }
+        @keyframes float-up { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-300px) scale(1.5); opacity: 0; } }
+        .heart-animation { animation: float-up 2s ease-out forwards; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .comment { animation: fade-in 0.3s ease-out; }
+    </style>
+</head>
+<body>
+
+    <div id="container" class="flex flex-col relative overflow-hidden">
+
+        <div id="pre-live-screen" class="w-full h-full flex flex-col justify-center items-center bg-black text-white">
+            <img src="https://placehold.co/100x100/ffffff/000000?text=T" class="w-24 h-24 rounded-full border-4 border-white mb-4">
+            <h1 class="text-2xl font-bold mb-2">インスタライブ</h1>
+            <p class="text-gray-300 mb-8">まもなく開始します</p>
+            <button id="start-btn" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105">
+                インスタライブを見る
+            </button>
+        </div>
+
+        <div id="live-screen" class="w-full h-full flex-col hidden text-white">
+            <video id="live-video" playsinline poster="poster.jpg" src="02_到着.mp4" class="absolute top-0 left-0 w-full h-full object-cover"></video>
+            
+            <header class="p-4 pt-6 flex items-center justify-between absolute top-0 left-0 w-full bg-gradient-to-b from-black/50 to-transparent">
+                <div class="flex items-center space-x-3">
+                    <img src="https://placehold.co/40x40/ffffff/000000?text=T" alt="Tachibana" class="w-10 h-10 rounded-full">
+                    <div><span class="font-bold">Tachibana</span></div>
+                    <div class="live-badge text-xs font-bold px-2 py-1 rounded">LIVE</div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-1">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C3.732 4.943 9.522 3 10 3s6.268 1.943 9.542 7c-3.274 5.057-9.064 7-9.542 7S3.732 15.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg>
+                        <span id="viewer-count">1</span>
+                    </div>
+                    <button id="close-btn" class="text-white text-2xl font-bold">&times;</button>
+                </div>
+            </header>
+
+            <main class="flex-grow flex flex-col justify-end p-4 relative overflow-hidden">
+                <div id="comment-section" class="w-full max-h-48 overflow-y-auto no-scrollbar space-y-2 mb-2"></div>
+                <div id="hearts-container" class="absolute bottom-20 right-4 w-16 h-80"></div>
+            </main>
+
+            <footer class="p-4 pb-6 flex items-center space-x-3 absolute bottom-0 left-0 w-full bg-gradient-to-t from-black/50 to-transparent">
+                <form id="comment-form" class="flex-grow flex">
+                    <input id="comment-input" type="text" placeholder="コメントを追加..." class="bg-black/30 border border-gray-500 rounded-full w-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 text-white">
+                </form>
+                <button id="send-comment-btn" type="submit" form="comment-form" class="text-white">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                </button>
+                <button id="heart-btn" class="text-white">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z"></path></svg>
+                </button>
+            </footer>
+        </div>
+
+        <div id="end-screen" class="absolute inset-0 bg-black/70 flex-col justify-center items-center text-center hidden text-white">
+            <h2 class="text-3xl font-bold mb-4">インスタライブ終了</h2>
+            <p class="text-lg">ご視聴ありがとうございました。</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // (JavaScriptは変更なし)
+            const preLiveScreen = document.getElementById('pre-live-screen');
+            const liveScreen = document.getElementById('live-screen');
+            const endScreen = document.getElementById('end-screen');
+            const startBtn = document.getElementById('start-btn');
+            const closeBtn = document.getElementById('close-btn');
+            const commentForm = document.getElementById('comment-form');
+            const commentInput = document.getElementById('comment-input');
+            const commentSection = document.getElementById('comment-section');
+            const heartBtn = document.getElementById('heart-btn');
+            const heartsContainer = document.getElementById('hearts-container');
+            const viewerCountEl = document.getElementById('viewer-count');
+            const liveVideo = document.getElementById('live-video');
+
+            startBtn.addEventListener('click', startLive);
+            closeBtn.addEventListener('click', endLive);
+            liveVideo.addEventListener('ended', endLive);
+
+            commentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const commentText = commentInput.value.trim();
+                if (commentText) {
+                    addComment('あなた', commentText);
+                    commentInput.value = '';
+                }
+            });
+
+            heartBtn.addEventListener('click', createHeart);
+
+            function startLive() {
+                liveVideo.play();
+                preLiveScreen.classList.add('hidden');
+                liveScreen.classList.remove('hidden');
+                liveScreen.classList.add('flex');
+            }
+
+            function endLive() {
+                if (liveScreen.classList.contains('hidden')) {
+                    return;
+                }
+                liveVideo.pause();
+                liveScreen.classList.add('hidden');
+                liveScreen.classList.remove('flex');
+                endScreen.classList.remove('hidden');
+                endScreen.classList.add('flex');
+            }
+
+            function addComment(user, text) {
+                const commentElement = document.createElement('div');
+                commentElement.classList.add('comment', 'flex', 'items-start', 'space-x-2', 'p-1');
+                const userImage = document.createElement('img');
+                userImage.src = `https://placehold.co/24x24/cccccc/000000?text=${user.charAt(0)}`;
+                userImage.alt = user;
+                userImage.classList.add('w-6', 'h-6', 'rounded-full');
+                const commentContent = document.createElement('div');
+                commentContent.innerHTML = `<span class="font-bold text-sm">${user}</span> <span class="text-sm">${text}</span>`;
+                commentElement.appendChild(userImage);
+                commentElement.appendChild(commentContent);
+                commentSection.appendChild(commentElement);
+                commentSection.scrollTop = commentSection.scrollHeight;
+            }
+
+            function createHeart() {
+                const heart = document.createElement('div');
+                heart.innerHTML = '❤️';
+                heart.classList.add('absolute', 'bottom-0', 'text-2xl', 'heart-animation');
+                heart.style.left = `${Math.random() * 60}%`;
+                heart.style.animationDuration = `${Math.random() * 1 + 1.5}s`;
+                heartsContainer.appendChild(heart);
+                setTimeout(() => heart.remove(), 2500);
+            }
+        });
+    </script>
+</body>
+</html>
